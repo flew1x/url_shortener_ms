@@ -1,0 +1,71 @@
+version: '3.9'
+
+networks:
+  url_shortener_network:
+    driver: bridge
+    external:
+      false
+
+services:
+  # Backend
+  url_shortener_ms:
+    build:
+      context: ./url_shortener
+      dockerfile: Dockerfile
+    container_name: url_shortener_ms
+    restart: unless-stopped
+    networks:
+      - url_shortener_network
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_PORT=${MONGO_PORT}
+      - MONGO_USERNAME=${MONGO_USERNAME}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_DATABASE=${MONGO_DATABASE}
+    ports:
+      - 80:80
+
+  # Redis
+  url_shortener_redis:
+    image: url_shortener_redis
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    container_name: url_shortener_redis
+    restart: unless-stopped
+    networks:
+      - url_shortener_network
+    volumes:
+      - ./redis-data/data:/data
+    env_file:
+      - .env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    ulimits:
+      nofile:
+        soft: 10000
+        hard: 15000
+    command: redis-server --loadmodule /usr/lib/redis/modules/redisbloom.so
+
+  # MongoDB
+  url_shortener_mongo:
+    image: mongo:latest
+    container_name: url_shortener_mongo
+    restart: unless-stopped
+    networks:
+      - url_shortener_network
+    volumes:
+      - ./mongo-data/data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}

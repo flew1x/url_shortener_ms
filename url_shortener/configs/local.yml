@@ -1,0 +1,13 @@
+length_short_url: 7
+
+live_cache_expiration: "24h"
+
+server_bind_ip: "0.0.0.0"
+server_bind_port: "80"
+server_scheme: "http"
+
+logging_mode: "dev"
+
+redis_url_db: 1
+
+rate_limit_per_second: 2
