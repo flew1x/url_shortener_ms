@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"net/url"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/cache"
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
-	http_v1 "github.com/flew1x/url_shortener_auth_ms/internal/controllers/http/v1"
-	"github.com/flew1x/url_shortener_auth_ms/internal/repository"
-	"github.com/flew1x/url_shortener_auth_ms/internal/service"
+	"github.com/flew1x/url_shortener_ms/internal/cache"
+	"github.com/flew1x/url_shortener_ms/internal/config"
+	http_v1 "github.com/flew1x/url_shortener_ms/internal/controllers/http/v1"
+	"github.com/flew1x/url_shortener_ms/internal/repository"
+	"github.com/flew1x/url_shortener_ms/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,7 +18,7 @@ import (
 )
 
 type Server struct {
-	config *config.Config
+	config config.IConfig
 	router *gin.Engine
 	logger *slog.Logger
 }
@@ -35,12 +35,12 @@ func createAddress(address string, port string) string {
 	return address + ":" + port
 }
 
-func createMongoURL(config *config.Config) string {
-	return fmt.Sprintf("mongodb://%s:%s@%s:%s",
-		config.MongoConfig.GetMongoUsername(),
-		url.QueryEscape(config.MongoConfig.GetMongoPassword()),
-		config.MongoConfig.GetMongoHost(),
-		config.MongoConfig.GetMongoPort(),
+func createMongoURL(config config.IConfig) string {
+	return fmt.Sprintf(POSTGRES_ADDRESS_TEMPLATE,
+		config.GetMongoConfig().GetMongoUsername(),
+		url.QueryEscape(config.GetMongoConfig().GetMongoPassword()),
+		config.GetMongoConfig().GetMongoHost(),
+		config.GetMongoConfig().GetMongoPort(),
 	)
 }
 
@@ -54,17 +54,17 @@ func createMongoURL(config *config.Config) string {
 // Returns:
 // - *Server: a new instance of Server.
 // - error: an error if there was an issue initializing the server.
-func InitialServer(ctx context.Context, config *config.Config, logger *slog.Logger) (*Server, error) {
+func InitialServer(ctx context.Context, config config.IConfig, logger *slog.Logger) (*Server, error) {
 	// Connect to Redis
 	redisOptions := &redis.Options{
-		Addr:     createAddress(config.RedisConfig.GetRedisHost(), config.RedisConfig.GetRedisPort()),
-		Password: config.RedisConfig.GetRedisPassword(),
-		DB:       config.RedisConfig.GetRedisUrlDB(),
+		Addr:     createAddress(config.GetRedisConfig().GetRedisHost(), config.GetRedisConfig().GetRedisPort()),
+		Password: config.GetRedisConfig().GetRedisPassword(),
+		DB:       config.GetRedisConfig().GetRedisUrlDB(),
 	}
 	redisClient := redis.NewClient(redisOptions)
 
 	// Initialize cache
-	cache := cache.NewCache(logger, config.RedisConfig, config.UrlConfig, redisClient)
+	cache := cache.NewCache(logger, config.GetRedisConfig(), config.GetUrlConfig(), redisClient)
 
 	mongoDatabase, err := mongoDatabase(ctx, logger, config)
 	if err != nil {
@@ -100,7 +100,7 @@ func InitialServer(ctx context.Context, config *config.Config, logger *slog.Logg
 // Returns:
 // - *mongo.Database: the initialized MongoDB database connection.
 // - error: an error if there was an issue initializing the database connection.
-func mongoDatabase(ctx context.Context, logger *slog.Logger, config *config.Config) (*mongo.Database, error) {
+func mongoDatabase(ctx context.Context, logger *slog.Logger, config config.IConfig) (*mongo.Database, error) {
 	// Connect to MongoDB
 	mongoURL := createMongoURL(config)
 
@@ -117,7 +117,7 @@ func mongoDatabase(ctx context.Context, logger *slog.Logger, config *config.Conf
 		return nil, err
 	}
 
-	mongoDatabase := mongoClient.Database(config.MongoConfig.GetMongoDatabase())
+	mongoDatabase := mongoClient.Database(config.GetMongoConfig().GetMongoDatabase())
 
 	return mongoDatabase, nil
 }
@@ -133,7 +133,7 @@ func (a *Server) Run() {
 //
 // ctx context.Context
 func (a *Server) StartHTTP(ctx context.Context) {
-	address := createAddress(a.config.ServerConfig.GetBindIP(), a.config.ServerConfig.GetPort())
+	address := createAddress(a.config.GetServerConfig().GetBindIP(), a.config.GetServerConfig().GetPort())
 	err := a.router.Run(address)
 	if err != nil {
 		panic(err)

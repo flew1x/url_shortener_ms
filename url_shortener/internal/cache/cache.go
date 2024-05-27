@@ -3,9 +3,13 @@ package cache
 import (
 	"log/slog"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/internal/config"
 	"github.com/redis/go-redis/v9"
 )
+
+type ICache interface {
+	GetUrlCache() IUrlCache
+}
 
 // Cache represents the cache layer for the URL shortener service.
 //
@@ -26,8 +30,16 @@ type Cache struct {
 //
 // Returns:
 // - *Cache: a pointer to the Cache struct.
-func NewCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IUrlConfig, redisClient *redis.Client) *Cache {
+func NewCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IUrlConfig, redisClient *redis.Client) ICache {
 	return &Cache{
 		UrlCache: NewUrlCache(logger, config, urlConfig, redisClient),
 	}
+}
+
+// GetUrlCache returns the IUrlCache instance in the Cache struct.
+//
+// Returns:
+// - IUrlCache: the IUrlCache instance.
+func (c *Cache) GetUrlCache() IUrlCache {
+	return c.UrlCache
 }

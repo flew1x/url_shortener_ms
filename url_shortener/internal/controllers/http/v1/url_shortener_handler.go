@@ -3,7 +3,7 @@ package http_v1
 import (
 	"net/http"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/service"
+	"github.com/flew1x/url_shortener_ms/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,7 +24,7 @@ type GetShortenUrlResponse struct {
 func (h *Handler) shortenURL(c *gin.Context) {
 	var request GetShortenURLParams
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.AbortWithError(http.StatusBadRequest, ErrInvalidRequest)
+		_ = c.AbortWithError(http.StatusBadRequest, ErrInvalidRequest)
 		return
 	}
 
@@ -33,13 +33,13 @@ func (h *Handler) shortenURL(c *gin.Context) {
 		return
 	}
 
-	shortURL, err := h.service.UrlShortener.Create(c.Request.Context(), request.URL)
+	shortURL, err := h.service.GetUrlShortener().Create(c.Request.Context(), request.URL)
 	if err != nil {
 		if err == service.ErrNotValidURL {
 			c.AbortWithStatusJSON(http.StatusBadRequest, service.ErrNotValidURL)
 			return
 		}
-		c.AbortWithError(http.StatusInternalServerError, ErrInternalError)
+		_ = c.AbortWithError(http.StatusInternalServerError, ErrInternalError)
 		return
 	}
 
@@ -58,11 +58,13 @@ func (h *Handler) redirectToOriginalURL(c *gin.Context) {
 		return
 	}
 
-	originalURL, err := h.service.UrlShortener.GetByShort(c.Request.Context(), shortURL)
+	generatedURL := h.service.GetUrlShortener().BuildShortURL(shortURL)
+
+	originalURL, err := h.service.GetUrlShortener().GetByShort(c.Request.Context(), generatedURL.String())
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrInternalError)
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, originalURL.Origin)
+	c.Redirect(http.StatusTemporaryRedirect, originalURL.GetOrigin())
 }

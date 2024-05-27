@@ -13,6 +13,26 @@ import (
 
 var cfg *koanf.Koanf
 
+type IConfig interface {
+	// InitConfig initializes the global configuration by loading the
+	InitConfig(configPath, configFile string)
+
+	// GetUrlConfig returns the UrlConfig field of the Config struct.
+	GetUrlConfig() IUrlConfig
+
+	// GetRedisConfig returns the RedisConfig field of the Config struct.
+	GetRedisConfig() IRedisConfig
+
+	// GetServerConfig returns the ServerConfig field of the Config struct.
+	GetServerConfig() IServerConfig
+
+	// GetLoggerConfig returns the LoggerConfig field of the Config struct.
+	GetLoggerConfig() ILoggerConfig
+
+	// GetMongoConfig returns the MongoConfig field of the Config struct.
+	GetMongoConfig() IMongoConfig
+}
+
 // Config represents the configuration for the URL shortener service.
 type Config struct {
 	// - UrlConfig: the configuration for the URL shortener service.
@@ -36,7 +56,7 @@ type Config struct {
 //
 // Returns:
 // - *Config: a new instance of Config.
-func NewConfig() *Config {
+func NewConfig() IConfig {
 	return &Config{
 		UrlConfig:    NewUrlConfig(),
 		RedisConfig:  NewRedisConfig(),
@@ -56,6 +76,46 @@ func (c *Config) InitConfig(configPath, configFile string) {
 	if err := cfg.Load(config, yaml.Parser()); err != nil {
 		panic(fmt.Errorf(ConfigLoadError, err))
 	}
+}
+
+// GetUrlConfig returns the UrlConfig field of the Config struct.
+//
+// Returns:
+// - IUrlConfig: the UrlConfig field of the Config struct.
+func (c *Config) GetUrlConfig() IUrlConfig {
+	return c.UrlConfig
+}
+
+// GetRedisConfig returns the RedisConfig field of the Config struct.
+//
+// Returns:
+// - IRedisConfig: the RedisConfig field of the Config struct.
+func (c *Config) GetRedisConfig() IRedisConfig {
+	return c.RedisConfig
+}
+
+// GetServerConfig returns the ServerConfig field of the Config struct.
+//
+// Returns:
+// - IServerConfig: the ServerConfig field of the Config struct.
+func (c *Config) GetServerConfig() IServerConfig {
+	return c.ServerConfig
+}
+
+// GetLoggerConfig returns the LoggerConfig field of the Config struct.
+//
+// Returns:
+// - ILoggerConfig: the LoggerConfig field of the Config struct.
+func (c *Config) GetLoggerConfig() ILoggerConfig {
+	return c.LoggerConfig
+}
+
+// GetMongoConfig returns the MongoConfig field of the Config struct.
+//
+// Returns:
+// - IMongoConfig: the MongoConfig field of the Config struct.
+func (c *Config) GetMongoConfig() IMongoConfig {
+	return c.MongoConfig
 }
 
 // MustString returns a string value for the given field from the global config.

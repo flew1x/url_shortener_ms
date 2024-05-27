@@ -4,36 +4,36 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
-	"github.com/flew1x/url_shortener_auth_ms/internal/entity"
+	"github.com/flew1x/url_shortener_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/internal/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type IURLRepository interface {
 	// Create creates a new URL in the repository.
-	Create(ctx context.Context, url entity.URL) error
+	Create(ctx context.Context, url entity.IURL) error
 
 	// GetByOrigin returns a URL from the repository by its origin.
-	GetByOrigin(ctx context.Context, origin string) (entity.URL, error)
+	GetByOrigin(ctx context.Context, origin string) (entity.IURL, error)
 
 	// GetByShort returns a URL from the repository by its short.
-	GetByShort(ctx context.Context, short string) (entity.URL, error)
+	GetByShort(ctx context.Context, short string) (entity.IURL, error)
 
 	// DeleteByID deletes a URL from the repository by its ID.
 	Delete(ctx context.Context, short string) error
 
 	// Update updates a URL in the repository by its ID.
-	Update(ctx context.Context, url entity.URL) error
+	Update(ctx context.Context, url entity.IURL) error
 }
 
 type urlRepository struct {
 	logger     *slog.Logger
-	config     *config.IUrlConfig
+	config     config.IUrlConfig
 	collection *mongo.Collection
 }
 
-func NewURLRepository(logger *slog.Logger, config *config.IUrlConfig, database *mongo.Database) IURLRepository {
+func NewURLRepository(logger *slog.Logger, config config.IUrlConfig, database *mongo.Database) IURLRepository {
 	return &urlRepository{logger: logger, config: config, collection: database.Collection(URLS_COLLECTION)}
 }
 
@@ -45,14 +45,17 @@ func NewURLRepository(logger *slog.Logger, config *config.IUrlConfig, database *
 //
 // Returns:
 // - error: an error if the operation failed.
-func (l *urlRepository) Create(ctx context.Context, url entity.URL) error {
-	l.logger.Debug("Creating URL in repository", "origin", url.Origin, "short", url.Short)
+func (l *urlRepository) Create(ctx context.Context, url entity.IURL) error {
+	l.logger.Debug("Creating URL in repository", "origin", url.GetOrigin(), "short", url.GetShort())
+
 	_, err := l.collection.InsertOne(ctx, url)
 	if err != nil {
 		l.logger.Error("Error creating URL in repository: " + err.Error())
 		return err
 	}
+
 	l.logger.Debug("URL created successfully")
+
 	return nil
 }
 
@@ -83,12 +86,12 @@ func (l *urlRepository) Delete(ctx context.Context, short string) error {
 // Returns:
 // - entity.URL: the URL retrieved from the repository.
 // - error: an error if the operation failed.
-func (l *urlRepository) GetByOrigin(ctx context.Context, origin string) (entity.URL, error) {
-	var url entity.URL
+func (l *urlRepository) GetByOrigin(ctx context.Context, origin string) (entity.IURL, error) {
+	var url entity.IURL
 	err := l.collection.FindOne(ctx, entity.URL{Origin: origin}).Decode(&url)
 	if err != nil {
 		l.logger.Error("error getting url: " + err.Error())
-		return entity.URL{}, err
+		return nil, err
 	}
 
 	return url, nil
@@ -103,16 +106,19 @@ func (l *urlRepository) GetByOrigin(ctx context.Context, origin string) (entity.
 // Returns:
 // - entity.URL: the URL retrieved from the repository.
 // - error: an error if the operation failed.
-func (l *urlRepository) GetByShort(ctx context.Context, short string) (entity.URL, error) {
-	var url entity.URL
+func (l *urlRepository) GetByShort(ctx context.Context, short string) (entity.IURL, error) {
+	var url entity.IURL
 	filter := bson.M{"short": short}
-	l.logger.Debug("Getting URL by short: " + short)
+	l.logger.Debug("Getting URL by short" + short)
+
 	err := l.collection.FindOne(ctx, filter).Decode(&url)
 	if err != nil {
-		l.logger.Error("error getting url: " + err.Error())
-		return entity.URL{}, err
+		l.logger.Error("error getting url" + err.Error())
+		return nil, err
 	}
-	l.logger.Debug("Retrieved URL: " + url.Origin)
+
+	l.logger.Debug("Retrieved URL" + url.GetOrigin())
+
 	return url, nil
 }
 
@@ -124,8 +130,8 @@ func (l *urlRepository) GetByShort(ctx context.Context, short string) (entity.UR
 //
 // Returns:
 // - error: an error if the operation failed.
-func (l *urlRepository) Update(ctx context.Context, url entity.URL) error {
-	_, err := l.collection.UpdateOne(ctx, entity.URL{Short: url.Short}, url)
+func (l *urlRepository) Update(ctx context.Context, url entity.IURL) error {
+	_, err := l.collection.UpdateOne(ctx, entity.URL{Short: url.GetShort()}, url)
 	if err != nil {
 		l.logger.Error("error updating url: " + err.Error())
 		return err

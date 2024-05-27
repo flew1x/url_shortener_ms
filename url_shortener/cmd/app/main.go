@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/app"
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
-	"github.com/flew1x/url_shortener_auth_ms/pkg/logger"
+	"github.com/flew1x/url_shortener_ms/internal/app"
+	"github.com/flew1x/url_shortener_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/pkg/logger"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	cfg := config.NewConfig()
 	cfg.InitConfig(CONFIG_PATH_ENV, CONFIG_FILE_ENV)
 
-	logger := logger.InitLogger(cfg.LoggerConfig.GetLogLevel())
+	logger := logger.InitLogger(cfg.GetLoggerConfig().GetLogLevel())
 
 	server, err := app.InitialServer(ctx, cfg, logger)
 	if err != nil {
