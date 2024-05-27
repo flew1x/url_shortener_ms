@@ -25,9 +25,6 @@ type IURLRepository interface {
 
 	// Update updates a URL in the repository by its ID.
 	Update(ctx context.Context, url entity.URL) error
-
-	// GetByID returns a URL from the repository by its ID.
-	GetByID(ctx context.Context, id string) (entity.URL, error)
 }
 
 type urlRepository struct {
@@ -116,25 +113,6 @@ func (l *urlRepository) GetByShort(ctx context.Context, short string) (entity.UR
 		return entity.URL{}, err
 	}
 	l.logger.Debug("Retrieved URL: " + url.Origin)
-	return url, nil
-}
-
-// GetByID retrieves a URL from the repository by its ID.
-//
-// Parameters:
-// - ctx: the context.Context for the operation.
-// - id: the ID of the URL to retrieve from the repository.
-//
-// Returns:
-// - entity.URL: the URL retrieved from the repository.
-// - error: an error if the operation failed.
-func (l *urlRepository) GetByID(ctx context.Context, id string) (entity.URL, error) {
-	var url entity.URL
-	err := l.collection.FindOne(ctx, entity.URL{ID: id}).Decode(&url)
-	if err != nil {
-		l.logger.Error("error getting url: " + err.Error())
-		return entity.URL{}, err
-	}
 	return url, nil
 }
 

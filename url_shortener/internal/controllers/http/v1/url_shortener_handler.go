@@ -58,11 +58,11 @@ func (h *Handler) redirectToOriginalURL(c *gin.Context) {
 		return
 	}
 
-	originalURL, err := h.service.UrlShortener.GetByID(c.Request.Context(), shortURL)
+	originalURL, err := h.service.UrlShortener.GetByShort(c.Request.Context(), shortURL)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrInternalError)
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, originalURL)
+	c.Redirect(http.StatusTemporaryRedirect, originalURL.Origin)
 }

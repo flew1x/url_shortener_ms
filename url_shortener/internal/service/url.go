@@ -22,9 +22,6 @@ type IURLService interface {
 	// GetByShort returns a URL from the repository by its short.
 	GetByShort(ctx context.Context, short string) (entity.URL, error)
 
-	// GetByID returns a URL from the repository by its ID.
-	GetByID(ctx context.Context, shortID string) (entity.URL, error)
-
 	// DeleteByID deletes a URL from the repository by its ID.
 	Delete(ctx context.Context, short string) error
 
@@ -46,6 +43,13 @@ func NewURLService(logger *slog.Logger, urlRepository repository.IURLRepository,
 	return &urlService{logger: logger, urlRepository: urlRepository, cache: cache, config: config}
 }
 
+// generateShortUrl generates a random short URL of the given length.
+//
+// Parameters:
+// - length: the length of the short URL.
+//
+// Returns:
+// - url.URL: the generated short URL.
 func (l *urlService) generateShortUrl(length int) url.URL {
 	rand := utils.SeededRand()
 
@@ -80,10 +84,6 @@ func (l *urlService) BuildShortUrl(short string) url.URL {
 
 // Create creates a new URL entry in the repository and returns its short URL.
 //
-// It validates the given origin URL and returns an error if the URL is not valid.
-// If the URL is present in the cache, it retrieves it from the cache.
-// Otherwise, it generates a new short URL and creates a new URL entry in the repository.
-//
 // Parameters:
 // - ctx: the context.Context for the function.
 // - originURL: the original URL to be shortened.
@@ -94,40 +94,36 @@ func (l *urlService) BuildShortUrl(short string) url.URL {
 func (s *urlService) Create(ctx context.Context, originURL string) (shortURL string, err error) {
 	// Validate the origin URL
 	if err = s.validateOrigin(originURL); err != nil {
-		s.logger.Error("Error validating origin URL: %v", err)
+		s.logger.Error("Error validating origin URL: " + err.Error())
 		return "", err
 	}
 
 	// Check if the URL is present in the cache
-	if cachedURL, err := s.cache.Get(ctx, originURL); err == nil {
-		// Parse the cached URL and return it
-		s.logger.Debug("URL found in cache: %v", slog.Any("url", cachedURL))
-		parsedURL, err := url.Parse(cachedURL.Origin)
-		if err != nil {
-			s.logger.Error("Error parsing cached URL: %v", err)
-			return "", err
-		}
-		return parsedURL.String(), nil
+	if cachedURL, err := s.cache.GetByLongUrl(ctx, originURL); err == nil {
+		s.logger.Debug("URL found in cache: %v", slog.Any("url", cachedURL.Short))
+		return cachedURL.Short, nil
 	}
 
 	// Generate a new short URL
 	shortGeneratedURL := s.generateShortUrl(s.config.UrlConfig.LengthShortURL())
 
-	urlObject := entity.NewURL(shortGeneratedURL.Path, shortGeneratedURL.String(), originURL)
+	urlObject := entity.NewURL(shortGeneratedURL.String(), originURL)
 
 	if err := s.urlRepository.Create(ctx, urlObject); err != nil {
-		s.logger.Error("Error creating URL entry: %v", err)
+		s.logger.Error("Error creating URL: " + err.Error())
 		return "", err
 	}
 
-	cachedUrl := entity.NewCachedURL(urlObject.Short, urlObject.Origin)
-	err = s.cache.Set(ctx, cachedUrl)
-	if err != nil {
-		s.logger.Error("Error setting URL in cache: %v", err)
+	if err := s.cache.SetByLongUrl(ctx, urlObject); err != nil {
+		s.logger.Error("Error setting URL in cache: " + err.Error())
 		return "", err
 	}
 
-	s.logger.Debug("URL created: %v", slog.Any("url", urlObject))
+	if err := s.cache.SetByShortUrl(ctx, urlObject); err != nil {
+		s.logger.Error("Error setting URL in cache: " + err.Error())
+		return "", err
+	}
+
 	return urlObject.Short, nil
 }
 
@@ -141,7 +137,7 @@ func (s *urlService) Create(ctx context.Context, originURL string) (shortURL str
 // Returns:
 // - error: an error if the URL is not valid, nil otherwise.
 func (l *urlService) validateOrigin(originURL string) error {
-	l.logger.Debug("Validating URL: %v", slog.Any("url", originURL))
+	l.logger.Debug("Validating URL: ", slog.Any("url", originURL))
 
 	// Parse URL
 	parsedURL, err := url.Parse(originURL)
@@ -186,66 +182,51 @@ func (l *urlService) GetByOrigin(ctx context.Context, origin string) (entity.URL
 	return url, nil
 }
 
-func (l *urlService) GetByShort(ctx context.Context, short string) (entity.URL, error) {
-	if err := l.validateOrigin(short); err != nil {
-		return entity.URL{}, err
-	}
-
-	url, err := l.urlRepository.GetByShort(ctx, short)
-	if err != nil {
-		l.logger.Error("error getting url: " + err.Error())
-		return entity.URL{}, err
-	}
-
-	return url, nil
-}
-
 // GetByShortID retrieves a URL from the repository or cache by its short.
 //
 // Parameters:
 // - ctx: the context.Context for the operation.
-// - short: the shortened URL to retrieve.
+// - shortID: the shortened URL to retrieve.
 //
 // Returns:
-// - url.URL: the parsed URL retrieved from the repository or cache.
+// - entity.URL: the URL retrieved from the repository or cache.
 // - error: an error if the operation failed.
-func (l *urlService) GetByID(ctx context.Context, shortID string) (entity.URL, error) {
-	l.logger.Debug("Getting URL from cache")
-	// Try to get the URL from the cache
-	cacheUrl, err := l.cache.Get(ctx, shortID)
+func (l *urlService) GetByShort(ctx context.Context, shortID string) (entity.URL, error) {
+	err := l.validateOrigin(shortID)
+	if err != nil {
+		l.logger.Error("error validating origin: " + err.Error())
+		return entity.URL{}, err
+	}
+
+	l.logger.Debug("Getting URL by short ID: " + shortID)
+
+	cacheURL, err := l.cache.GetByShortUrl(ctx, shortID)
 	if err == nil {
-		l.logger.Debug("URL found in cache")
-		// If the URL is found in the cache, return the parsed URL
-		parsedUrl, err := url.Parse(cacheUrl.Origin)
-		if err != nil {
-			l.logger.Error("Error parsing cached URL: " + err.Error())
-			return entity.URL{
-				Origin: cacheUrl.Origin,
-				Short:  cacheUrl.Short,
-			}, err
-		}
-
-		return entity.URL{Origin: cacheUrl.Origin, Short: cacheUrl.Short}, nil
+		l.logger.Debug("URL found in cache: " + cacheURL.Origin)
+		return cacheURL, nil
 	}
 
-	l.logger.Debug("URL not found in cache, getting it from repository")
-	// If the URL is not found in the cache, retrieve it from the repository
-	urlObject, err := l.urlRepository.GetByShort(ctx, shortID)
+	repoURL, err := l.urlRepository.GetByShort(ctx, shortID)
 	if err != nil {
-		l.logger.Error("Error getting URL from repository: " + err.Error())
+		l.logger.Error("error getting URL from repository: " + err.Error())
 		return entity.URL{}, err
 	}
 
-	l.logger.Debug("URL retrieved from repository, caching it")
-	// Cache the URL
-	cachedUrl := entity.NewCachedURL(urlObject.Origin, urlObject.Short, urlObject.ID)
-	err = l.cache.Set(ctx, cachedUrl)
+	l.logger.Debug("URL found in repository: " + repoURL.Origin)
+
+	err = l.cache.SetByShortUrl(ctx, repoURL)
 	if err != nil {
-		l.logger.Error("Error caching URL: " + err.Error())
+		l.logger.Error("error setting URL in cache: " + err.Error())
 		return entity.URL{}, err
 	}
 
-	return entity.URL{ID: urlObject.ID, Origin: urlObject.Origin, Short: urlObject.Short, CreatedAt: urlObject.CreatedAt}, nil
+	err = l.cache.SetByLongUrl(ctx, repoURL)
+	if err != nil {
+		l.logger.Error("error setting URL in cache: " + err.Error())
+		return entity.URL{}, err
+	}
+
+	return repoURL, nil
 }
 
 // Delete deletes a URL from the repository by its short.
