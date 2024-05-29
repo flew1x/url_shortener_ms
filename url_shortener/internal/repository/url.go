@@ -29,11 +29,11 @@ type IURLRepository interface {
 
 type urlRepository struct {
 	logger     *slog.Logger
-	config     *config.IUrlConfig
+	config     *config.IURLConfig
 	collection *mongo.Collection
 }
 
-func NewURLRepository(logger *slog.Logger, config *config.IUrlConfig, database *mongo.Database) IURLRepository {
+func NewURLRepository(logger *slog.Logger, config *config.IURLConfig, database *mongo.Database) IURLRepository {
 	return &urlRepository{logger: logger, config: config, collection: database.Collection(URLS_COLLECTION)}
 }
 

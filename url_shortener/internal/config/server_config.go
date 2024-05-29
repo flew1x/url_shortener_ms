@@ -22,17 +22,17 @@ type IServerConfig interface {
 	GetScheme() string
 }
 
-type serverConfig struct{}
+type ServerConfig struct{}
 
-func NewServerConfig() IServerConfig {
-	return &serverConfig{}
+func NewServerConfig() *ServerConfig {
+	return &ServerConfig{}
 }
 
 // GetPort returns the port of the HTTP server.
 //
 // Returns:
 // - int: the port of the HTTP server.
-func (s *serverConfig) GetPort() string {
+func (s *ServerConfig) GetPort() string {
 	return mustString(SERVER_PORT)
 }
 
@@ -40,7 +40,7 @@ func (s *serverConfig) GetPort() string {
 //
 // Returns:
 // - string: the bind IP address of the HTTP server.
-func (s *serverConfig) GetBindIP() string {
+func (s *ServerConfig) GetBindIP() string {
 	return mustString(SERVER_BIND_IP)
 }
 
@@ -48,7 +48,7 @@ func (s *serverConfig) GetBindIP() string {
 //
 // Returns:
 // - int: the limit per second of the HTTP server.
-func (s *serverConfig) GetLimitPerSecond() int {
+func (s *ServerConfig) GetLimitPerSecond() int {
 	return mustInt(LIMIT_PER_SECOND)
 }
 
@@ -58,6 +58,6 @@ func (s *serverConfig) GetLimitPerSecond() int {
 // - string: the scheme of the HTTP server.
 //
 // The scheme is one of "http" or "https".
-func (s *serverConfig) GetScheme() string {
+func (s *ServerConfig) GetScheme() string {
 	return mustString(SERVER_SCHEME)
 }

@@ -16,7 +16,7 @@ var cfg *koanf.Koanf
 // Config represents the configuration for the URL shortener service.
 type Config struct {
 	// - UrlConfig: the configuration for the URL shortener service.
-	UrlConfig IUrlConfig `koanf:"url_shortener"`
+	URLConfig IURLConfig `koanf:"url_shortener"`
 
 	// - RedisConfig: the configuration for the Redis cache.
 	RedisConfig IRedisConfig `koanf:"redis"`
@@ -38,7 +38,7 @@ type Config struct {
 // - *Config: a new instance of Config.
 func NewConfig() *Config {
 	return &Config{
-		UrlConfig:    NewUrlConfig(),
+		URLConfig:    NewURLConfig(),
 		RedisConfig:  NewRedisConfig(),
 		ServerConfig: NewServerConfig(),
 		LoggerConfig: NewLoggerConfig(),
@@ -54,7 +54,7 @@ func (c *Config) InitConfig(configPath, configFile string) {
 	filePath := filepath.Join(configPath, configFile)
 	config := file.Provider(filePath)
 	if err := cfg.Load(config, yaml.Parser()); err != nil {
-		panic(fmt.Errorf(ConfigLoadError, err))
+		panic(ErrConfigLoadFailed)
 	}
 }
 

@@ -64,7 +64,7 @@ func InitialServer(ctx context.Context, config *config.Config, logger *slog.Logg
 	redisClient := redis.NewClient(redisOptions)
 
 	// Initialize cache
-	cache := cache.NewCache(logger, config.RedisConfig, config.UrlConfig, redisClient)
+	cache := cache.NewCache(logger, config.RedisConfig, config.URLConfig, redisClient)
 
 	mongoDatabase, err := mongoDatabase(ctx, logger, config)
 	if err != nil {

@@ -31,12 +31,12 @@ type redisUserTokenCache struct {
 	// config is a configuration for Redis client.
 	config config.IRedisConfig
 	// urlConfig is a configuration for URLs.
-	urlConfig config.IUrlConfig
+	urlConfig config.IURLConfig
 	// client is a Redis client.
 	client *redis.Client
 }
 
-func NewUrlCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IUrlConfig, client *redis.Client) IUrlCache {
+func NewUrlCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IURLConfig, client *redis.Client) IUrlCache {
 	return &redisUserTokenCache{logger: logger, config: config, urlConfig: urlConfig, client: client}
 }
 

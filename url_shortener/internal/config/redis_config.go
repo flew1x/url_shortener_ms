@@ -21,15 +21,15 @@ type IRedisConfig interface {
 	GetRedisUrlDB() int
 }
 
-type redisConfig struct{}
+type RedisConfig struct{}
 
 // NewRedisConfig returns an instance of IRedisConfig interface
 // implementing the Redis configuration.
 //
 // Returns:
 // - IRedisConfig: an instance of IRedisConfig interface.
-func NewRedisConfig() IRedisConfig {
-	return &redisConfig{}
+func NewRedisConfig() *RedisConfig {
+	return &RedisConfig{}
 }
 
 // NewRedisConfig returns an instance of IRedisConfig interface
@@ -38,7 +38,7 @@ func NewRedisConfig() IRedisConfig {
 // Returns:
 // - IRedisConfig: an instance of IRedisConfig interface.
 
-func (r *redisConfig) GetRedisHost() string {
+func (r *RedisConfig) GetRedisHost() string {
 	return mustStringFromEnv(REDIS_HOST)
 }
 
@@ -46,7 +46,7 @@ func (r *redisConfig) GetRedisHost() string {
 //
 // Returns:
 // - string: the password of the Redis server.
-func (r *redisConfig) GetRedisPassword() string {
+func (r *RedisConfig) GetRedisPassword() string {
 	return mustStringFromEnv(REDIS_PASSWORD)
 }
 
@@ -54,7 +54,7 @@ func (r *redisConfig) GetRedisPassword() string {
 //
 // Returns:
 // - string: the port of the Redis server.
-func (r *redisConfig) GetRedisPort() string {
+func (r *RedisConfig) GetRedisPort() string {
 	return mustStringFromEnv(REDIS_PORT)
 }
 
@@ -62,6 +62,6 @@ func (r *redisConfig) GetRedisPort() string {
 //
 // Returns:
 // - int: the database number of the Redis server.
-func (r *redisConfig) GetRedisUrlDB() int {
+func (r *RedisConfig) GetRedisUrlDB() int {
 	return mustInt(REDIS_URL_DB)
 }

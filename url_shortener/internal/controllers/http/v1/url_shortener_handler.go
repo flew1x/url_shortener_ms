@@ -1,4 +1,4 @@
-package http_v1
+package httpv1
 
 import (
 	"net/http"

@@ -7,7 +7,7 @@ const (
 	LIVE_CACHE_EXPIRATION = "live_cache_expiration"
 )
 
-type IUrlConfig interface {
+type IURLConfig interface {
 	// LengthShortURL returns the length of the short URL.
 	LengthShortURL() int
 
@@ -15,21 +15,21 @@ type IUrlConfig interface {
 	LiveCaheExpiration() time.Duration
 }
 
-type urlConfig struct{}
+type URLConfig struct{}
 
-// NewUrlConfig returns a new instance of IUrlConfig.
+// NewURLConfig returns a new instance of IURLConfig.
 //
 // Returns:
-// - IUrlConfig: a new instance of IUrlConfig.
-func NewUrlConfig() IUrlConfig {
-	return &urlConfig{}
+// - IURLConfig: a new instance of IURLConfig.
+func NewURLConfig() *URLConfig {
+	return &URLConfig{}
 }
 
 // LengthShortURL returns the length of the short URL.
 //
 // Returns:
 // - int: the length of the short URL.
-func (u *urlConfig) LengthShortURL() int {
+func (u *URLConfig) LengthShortURL() int {
 	return mustInt(LENGTH_SHORT_URL)
 }
 
@@ -40,6 +40,6 @@ func (u *urlConfig) LengthShortURL() int {
 //
 // Returns:
 // - time.Duration: the expiration time of the live cache.
-func (u *urlConfig) LiveCaheExpiration() time.Duration {
+func (u *URLConfig) LiveCaheExpiration() time.Duration {
 	return mustDuration(LIVE_CACHE_EXPIRATION)
 }

@@ -105,7 +105,7 @@ func (s *urlService) Create(ctx context.Context, originURL string) (shortURL str
 	}
 
 	// Generate a new short URL
-	shortGeneratedURL := s.generateShortUrl(s.config.UrlConfig.LengthShortURL())
+	shortGeneratedURL := s.generateShortUrl(s.config.URLConfig.LengthShortURL())
 
 	urlObject := entity.NewURL(shortGeneratedURL.String(), originURL)
 

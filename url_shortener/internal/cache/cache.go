@@ -26,7 +26,7 @@ type Cache struct {
 //
 // Returns:
 // - *Cache: a pointer to the Cache struct.
-func NewCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IUrlConfig, redisClient *redis.Client) *Cache {
+func NewCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IURLConfig, redisClient *redis.Client) *Cache {
 	return &Cache{
 		UrlCache: NewUrlCache(logger, config, urlConfig, redisClient),
 	}

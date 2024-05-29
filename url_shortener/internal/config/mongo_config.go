@@ -16,17 +16,17 @@ type IMongoConfig interface {
 	GetMongoDatabase() string
 }
 
-type mongoConfig struct{}
+type MongoConfig struct{}
 
-func NewMongoConfig() IMongoConfig {
-	return &mongoConfig{}
+func NewMongoConfig() *MongoConfig {
+	return &MongoConfig{}
 }
 
 // GetMongoHost returns the host of the MongoDB server.
 //
 // Returns:
 // - string: the host of the MongoDB server.
-func (m *mongoConfig) GetMongoHost() string {
+func (m *MongoConfig) GetMongoHost() string {
 	return mustStringFromEnv(MONGO_HOST)
 }
 
@@ -34,7 +34,7 @@ func (m *mongoConfig) GetMongoHost() string {
 //
 // Returns:
 // - string: the password of the MongoDB server.
-func (m *mongoConfig) GetMongoPassword() string {
+func (m *MongoConfig) GetMongoPassword() string {
 	return mustStringFromEnv(MONGO_PASSWORD)
 }
 
@@ -42,7 +42,7 @@ func (m *mongoConfig) GetMongoPassword() string {
 //
 // Returns:
 // - string: the port of the MongoDB server.
-func (m *mongoConfig) GetMongoPort() string {
+func (m *MongoConfig) GetMongoPort() string {
 	return mustStringFromEnv(MONGO_PORT)
 }
 
@@ -50,7 +50,7 @@ func (m *mongoConfig) GetMongoPort() string {
 //
 // Returns:
 // - string: the username of the MongoDB server.
-func (m *mongoConfig) GetMongoUsername() string {
+func (m *MongoConfig) GetMongoUsername() string {
 	return mustStringFromEnv(MONGO_USERNAME)
 }
 
@@ -58,6 +58,6 @@ func (m *mongoConfig) GetMongoUsername() string {
 //
 // Returns:
 // - string: the name of the MongoDB database.
-func (m *mongoConfig) GetMongoDatabase() string {
+func (m *MongoConfig) GetMongoDatabase() string {
 	return mustStringFromEnv(MONGO_DATABASE)
 }

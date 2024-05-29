@@ -9,16 +9,16 @@ type ILoggerConfig interface {
 	GetLogLevel() string
 }
 
-type loggerConfig struct{}
+type LoggerConfig struct{}
 
-func NewLoggerConfig() ILoggerConfig {
-	return &loggerConfig{}
+func NewLoggerConfig() *LoggerConfig {
+	return &LoggerConfig{}
 }
 
 // GetLogLevel returns the logger configuration's log level.
 //
 // Returns:
 // - string: the log level.
-func (l *loggerConfig) GetLogLevel() string {
+func (l *LoggerConfig) GetLogLevel() string {
 	return mustString(LOG_LEVEL)
 }

@@ -13,6 +13,6 @@ type Repository struct {
 
 func NewRepository(logger *slog.Logger, config *config.Config, database *mongo.Database) *Repository {
 	return &Repository{
-		UrlRepository: NewURLRepository(logger, &config.UrlConfig, database),
+		UrlRepository: NewURLRepository(logger, &config.URLConfig, database),
 	}
 }
