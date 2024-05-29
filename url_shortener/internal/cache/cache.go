@@ -3,7 +3,7 @@ package cache
 import (
 	"log/slog"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

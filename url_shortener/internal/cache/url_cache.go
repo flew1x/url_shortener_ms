@@ -4,23 +4,23 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
-	"github.com/flew1x/url_shortener_auth_ms/internal/entity"
+	"github.com/flew1x/url_shortener_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/internal/entity"
 	"github.com/redis/go-redis/v9"
 )
 
 type IUrlCache interface {
 	// Get retrieves a URL from the cache using its long URL.
-	GetByShortUrl(ctx context.Context, shortUrl string) (entity.URL, error)
+	GetByShortUrl(ctx context.Context, shortUrl string) (entity.IURL, error)
 
 	// Set saves a URL in the cache using its short URL.
-	SetByShortUrl(ctx context.Context, url entity.URL) error
+	SetByShortUrl(ctx context.Context, url entity.IURL) error
 
 	// Get retrieves a URL from the cache using its short URL.
-	GetByLongUrl(ctx context.Context, longUrl string) (entity.URL, error)
+	GetByLongUrl(ctx context.Context, longUrl string) (entity.IURL, error)
 
 	// Set saves a URL in the cache using its long URL.
-	SetByLongUrl(ctx context.Context, url entity.URL) error
+	SetByLongUrl(ctx context.Context, url entity.IURL) error
 }
 
 // redisUserTokenCache is an implementation of IUrlCache interface
@@ -28,27 +28,19 @@ type IUrlCache interface {
 type redisUserTokenCache struct {
 	// logger is used for logging.
 	logger *slog.Logger
+
 	// config is a configuration for Redis client.
 	config config.IRedisConfig
+
 	// urlConfig is a configuration for URLs.
 	urlConfig config.IURLConfig
+
 	// client is a Redis client.
 	client *redis.Client
 }
 
 func NewUrlCache(logger *slog.Logger, config config.IRedisConfig, urlConfig config.IURLConfig, client *redis.Client) IUrlCache {
 	return &redisUserTokenCache{logger: logger, config: config, urlConfig: urlConfig, client: client}
-}
-
-// createUrlKey constructs the key for a URL in the cache.
-//
-// Parameters:
-// - shortURL: the short URL for which to create the key.
-//
-// Returns:
-// - string: the key for the URL in the cache.
-func (c *redisUserTokenCache) createUrlKey(shortURL string) string {
-	return "url:" + shortURL
 }
 
 // GetByShortUrl retrieves a URL from the cache using its long URL.
@@ -60,18 +52,21 @@ func (c *redisUserTokenCache) createUrlKey(shortURL string) string {
 // Returns:
 // - entity.URL: the URL retrieved from the cache.
 // - error: an error if the operation failed.
-func (c *redisUserTokenCache) GetByShortUrl(ctx context.Context, shortURL string) (entity.URL, error) {
-	key := c.createUrlKey(shortURL)
-
-	c.logger.Debug("Getting URL from cache ", slog.String("key", key))
-	value, err := c.client.Get(ctx, key).Result()
+func (c *redisUserTokenCache) GetByShortUrl(ctx context.Context, shortURL string) (entity.IURL, error) {
+	value, err := c.client.Get(ctx, shortURL).Result()
 	if err != nil {
-		c.logger.Debug("Failed to get URL from cache: %s", err)
-		return entity.URL{}, err
+		c.logger.Debug("Failed to get URL from cache", slog.String("err", err.Error()))
+		return nil, err
 	}
 
-	c.logger.Debug("Retrieved URL from cache ", slog.String("key", key), slog.String("value", value))
-	return entity.URL{Short: key, Origin: value}, nil
+	c.logger.Debug("Retrieved URL from cache", slog.String("key", shortURL), slog.String("value", value))
+
+	url := entity.NewURL(
+		shortURL,
+		value,
+	)
+
+	return url, nil
 }
 
 // SetByShortUrl saves a URL in the cache using its short URL.
@@ -82,17 +77,13 @@ func (c *redisUserTokenCache) GetByShortUrl(ctx context.Context, shortURL string
 //
 // Returns:
 // - error: an error if the operation failed.
-func (c *redisUserTokenCache) SetByShortUrl(ctx context.Context, url entity.URL) error {
-	key := c.createUrlKey(url.Short)
-
-	c.logger.Debug("Saving URL to cache ", slog.String("key", key), slog.String("value", url.Origin))
-	err := c.client.Set(ctx, key, url.Origin, c.urlConfig.LiveCaheExpiration()).Err()
-	if err != nil {
-		c.logger.Debug("Failed to save URL to cache: %s", err)
+func (c *redisUserTokenCache) SetByShortUrl(ctx context.Context, shortUrl entity.IURL) error {
+	if err := c.client.Set(ctx, shortUrl.GetShort(), shortUrl.GetOrigin(), c.urlConfig.LiveCaheExpiration()).Err(); err != nil {
+		c.logger.Debug("Failed to save URL to cache", slog.String("err", err.Error()))
 		return err
 	}
 
-	c.logger.Debug("Saved URL to cache ", slog.String("key", key), slog.String("value", url.Origin))
+	c.logger.Debug("Saved URL to cache", slog.String("key", shortUrl.GetShort()), slog.String("value", shortUrl.GetOrigin()))
 	return nil
 }
 
@@ -105,18 +96,21 @@ func (c *redisUserTokenCache) SetByShortUrl(ctx context.Context, url entity.URL)
 // Returns:
 // - entity.URL: the URL retrieved from the cache.
 // - error: an error if the operation failed.
-func (c *redisUserTokenCache) GetByLongUrl(ctx context.Context, longUrl string) (entity.URL, error) {
-	key := c.createUrlKey(longUrl)
-
-	c.logger.Debug("Getting URL from cache ", slog.String("key", key))
-	value, err := c.client.Get(ctx, key).Result()
+func (c *redisUserTokenCache) GetByLongUrl(ctx context.Context, longUrl string) (entity.IURL, error) {
+	value, err := c.client.Get(ctx, longUrl).Result()
 	if err != nil {
-		c.logger.Debug("Failed to get URL from cache: %s", err)
-		return entity.URL{}, err
+		c.logger.Debug("Failed to get URL from cache", slog.String("err", err.Error()))
+		return nil, err
 	}
 
-	c.logger.Debug("Retrieved URL from cache ", slog.String("key", key), slog.String("value", value))
-	return entity.URL{Short: key, Origin: value}, nil
+	c.logger.Debug("Retrieved URL from cache", slog.String("key", longUrl), slog.String("value", value))
+
+	url := entity.NewURL(
+		value,
+		longUrl,
+	)
+
+	return url, nil
 }
 
 // SetByLongUrl saves a URL in the cache using its long URL.
@@ -127,16 +121,12 @@ func (c *redisUserTokenCache) GetByLongUrl(ctx context.Context, longUrl string) 
 //
 // Returns:
 // - error: an error if the operation failed.
-func (c *redisUserTokenCache) SetByLongUrl(ctx context.Context, url entity.URL) error {
-	key := c.createUrlKey(url.Origin)
-
-	c.logger.Debug("Saving URL to cache ", slog.String("key", key), slog.String("value", url.Origin))
-	err := c.client.Set(ctx, key, url.Origin, c.urlConfig.LiveCaheExpiration()).Err()
-	if err != nil {
-		c.logger.Debug("Failed to save URL to cache: %s", err)
+func (c *redisUserTokenCache) SetByLongUrl(ctx context.Context, longUrl entity.IURL) error {
+	if err := c.client.Set(ctx, longUrl.GetOrigin(), longUrl.GetShort(), c.urlConfig.LiveCaheExpiration()).Err(); err != nil {
+		c.logger.Debug("Failed to save URL to cache", slog.String("err", err.Error()))
 		return err
 	}
 
-	c.logger.Debug("Saved URL to cache ", slog.String("key", key), slog.String("value", url.Origin))
+	c.logger.Debug("Saved URL to cache", slog.String("key", longUrl.GetOrigin()), slog.String("value", longUrl.GetShort()))
 	return nil
 }

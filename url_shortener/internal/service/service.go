@@ -3,9 +3,9 @@ package service
 import (
 	"log/slog"
 
-	"github.com/flew1x/url_shortener_auth_ms/internal/cache"
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
-	"github.com/flew1x/url_shortener_auth_ms/internal/repository"
+	"github.com/flew1x/url_shortener_ms/internal/cache"
+	"github.com/flew1x/url_shortener_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/internal/repository"
 )
 
 type Service struct {

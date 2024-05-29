@@ -4,6 +4,17 @@ import (
 	"time"
 )
 
+type IURL interface {
+	// GetShort returns the shortened URL.
+	GetShort() string
+
+	// GetOrigin returns the original URL.
+	GetOrigin() string
+
+	// GetCreatedAt returns the time when the URL was created.
+	GetCreatedAt() time.Time
+}
+
 // URL represents a shortened URL.
 //
 // Fields:
@@ -18,8 +29,23 @@ type URL struct {
 	CreatedAt time.Time `json:"created_at"` // the time when the URL was created
 }
 
-func NewURL(short, origin string) URL {
-	return URL{
+// GetCreatedAt implements IURL.
+func (u *URL) GetCreatedAt() time.Time {
+	return u.CreatedAt
+}
+
+// GetOrigin implements IURL.
+func (u *URL) GetOrigin() string {
+	return u.Origin
+}
+
+// GetShort implements IURL.
+func (u *URL) GetShort() string {
+	return u.Short
+}
+
+func NewURL(short, origin string) IURL {
+	return &URL{
 		Short:     short,
 		Origin:    origin,
 		CreatedAt: time.Now(),

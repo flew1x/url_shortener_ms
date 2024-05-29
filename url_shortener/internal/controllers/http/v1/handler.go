@@ -7,9 +7,10 @@ import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/didip/tollbooth_gin"
-	"github.com/flew1x/url_shortener_auth_ms/internal/cache"
-	"github.com/flew1x/url_shortener_auth_ms/internal/config"
-	"github.com/flew1x/url_shortener_auth_ms/internal/service"
+	"github.com/flew1x/url_shortener_ms/internal/cache"
+	"github.com/flew1x/url_shortener_ms/internal/config"
+	"github.com/flew1x/url_shortener_ms/internal/service"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -42,16 +43,19 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	common := router.Group("/", tollbooth_gin.LimitHandler(limiter))
 	{
-		common.GET("/:url", h.redirectToOriginalURL)
-
 		api := common.Group("/api")
 		{
+			api.GET("/healthcheck", h.healthcheck)
+
 			v1 := api.Group("/v1")
 			{
 				v1.GET("/healthcheck", h.healthcheck)
 				v1.POST("/shorten", h.shortenURL)
 			}
+
 		}
+
+		common.Any("s/:url", h.redirectToOriginalURL)
 	}
 
 	return router
